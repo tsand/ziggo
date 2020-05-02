@@ -1,0 +1,22 @@
+{
+  "name": "ziggo",
+  "version": "1.0.0",
+  "description": "CLI tool for interacting with local network Ziggo routers",
+  "repository": "https://github.com/tsand/ziggo",
+  "license": "MIT",
+  "bin": {
+    "ziggo": "./lib/bin/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "execa": "^4.0.0",
+    "listr": "^0.14.3",
+    "puppeteer-core": "^3.0.2",
+    "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "@types/puppeteer-core": "^2.0.0"
+  }
+}
