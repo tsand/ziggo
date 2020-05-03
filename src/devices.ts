@@ -1,7 +1,7 @@
 import { Page } from "puppeteer-core"
 
 export interface Device {
-    readonly name
+    name: string
     domain: string
     page: Page
 
@@ -11,14 +11,17 @@ export interface Device {
 }
 
 export class TPLinkExtender implements Device {
-    readonly name = 'TPLink Powerline Extender'
-    readonly domain = 'wifi.powerline'
+    name = 'TPLink Powerline Extender'
+    domain = 'wifi.powerline'
     page: Page
 
     async login(password: string): Promise<boolean> {
         const url = `http://${this.domain}/`
         try {
-            await this.page.goto(url, { waitUntil: 'networkidle0' })
+            await this.page.goto(url, {
+                waitUntil: 'networkidle0',
+                timeout: 5000,
+            })
         } catch {
             throw new Error(`Failed to load "${url}"`)
         }
@@ -62,7 +65,10 @@ class Ziggo {
     async login(password: string): Promise<boolean> {
         const url = `http://${this.domain}/common_page/login.html`
         try {
-            await this.page.goto(url, { waitUntil: 'networkidle0' })
+            await this.page.goto(url, {
+                waitUntil: 'networkidle0',
+                timeout: 5000,
+            })
         } catch {
             throw new Error(`Failed to load "${url}"`)
         }
@@ -97,11 +103,11 @@ class Ziggo {
 }
 
 export class ZiggoRouter extends Ziggo implements Device {
-    readonly name = 'Ziggo Router'
-    readonly domain = 'wifi.router'
+    name = 'Ziggo Router'
+    domain = 'wifi.router'
 }
 
 export class ZiggoBooster extends Ziggo implements Device {
-    readonly name = 'Ziggo Booster'
-    readonly domain = 'wifi.booster'
+    name = 'Ziggo Booster'
+    domain = 'wifi.booster'
 }

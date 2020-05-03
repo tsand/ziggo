@@ -16,9 +16,14 @@ export const builder = {
         type: 'boolean',
         default: true,
     },
+    name: {
+        alias: 'n',
+        describe: 'Regex string for device(s) to reboot',
+        type: 'string',
+    },
 }
 
 export const handler = (argv) => {
-    const { dryRun, headless } = argv
-    runTask('RebootTask', dryRun, headless)
+    const { dryRun, headless, name } = argv
+    runTask('RebootTask', dryRun, headless, name)
 }

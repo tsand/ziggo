@@ -1,7 +1,6 @@
 import { Device, TPLinkExtender, ZiggoRouter, ZiggoBooster } from './devices'
-import { getPassword } from './keychain'
 import { launch, Browser } from 'puppeteer-core'
-import { ReadyLock } from './ReadyLock'
+import { getPassword, Barrier } from './utils'
 import Listr = require('listr')
 
 
@@ -13,19 +12,21 @@ interface Task {
 
 
 class RebootTask {
-    listr: Listr
-    readyLock: ReadyLock
-    browser: Browser
-    devices: Array<Device>
 
-    dryRun: boolean
-    headless: boolean
+    private listr: Listr
+    private barrier: Barrier
+    private browser: Browser
 
-    constructor(devices: Array<Device>, dryRun = false, headless = true) {
-        this.devices = devices
-        this.dryRun = dryRun
-        this.headless = headless
-        this.readyLock = new ReadyLock()
+    constructor(
+        private devices: Array<Device>,
+        private dryRun = false,
+        private headless = true) {
+        this.barrier = new Barrier(this.devices.length)
+
+        this.listr = new Listr({
+            concurrent: true,
+        })
+        this.devices.forEach((d) => this.addDeviceTask(d))
     }
 
     async setUp() {
@@ -34,17 +35,6 @@ class RebootTask {
             headless: this.headless,
             defaultViewport: null,
         })
-
-        this.listr = new Listr({
-            concurrent: true
-        })
-
-        for (let device of this.devices) {
-            this.listr.add([{
-                title: device.name,
-                task: (_, lTask) => this.runOnDevice(lTask, device)
-            }])
-        }
     }
 
     async tearDown() {
@@ -55,9 +45,14 @@ class RebootTask {
         await this.listr.run()
     }
 
-    private async runOnDevice(lTask, device: Device) {
-        const lid = this.readyLock.start()
+    private addDeviceTask(device: Device) {
+        this.listr.add([{
+            title: device.name,
+            task: (_, lTask) => this.runOnDevice(lTask, device)
+        }])
+    }
 
+    private async runOnDevice(lTask, device: Device) {
         lTask.output = 'Retrieving password...'
         const password = await getPassword(device.domain)
 
@@ -69,7 +64,7 @@ class RebootTask {
         await device.login(password)
 
         lTask.output = 'Waiting on other devices...'
-        await this.readyLock.wait(lid)
+        await this.barrier.wait()
 
         lTask.output = 'Rebooting...'
         const rebooted = await device.reboot(!this.dryRun)
@@ -80,14 +75,14 @@ class RebootTask {
     }
 }
 
-export async function runTask(taskName: string, dryRun = false, headless = true): Promise<void> {
+export async function runTask(taskName: string, dryRun = false, headless = true, name: string): Promise<void> {
     let task: Task
 
-    const devices = [
+    let devices = [
         new TPLinkExtender(),
         new ZiggoBooster(),
         new ZiggoRouter(),
-    ]
+    ].filter((d) => name == null || d.name.toUpperCase().match(name.toUpperCase()) != null)
 
     switch (taskName) {
         case RebootTask.name:

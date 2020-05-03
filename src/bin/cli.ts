@@ -7,5 +7,6 @@ import _yargs = require('yargs')
 _yargs.usage('Usage: $0 <command> [options]')
     .commandDir('../commands')
     .demandCommand()
+    .strict()
     .help()
     .argv
